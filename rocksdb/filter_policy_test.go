@@ -67,7 +67,7 @@ type mockFilterPolicy struct {
 	keyMayMatch  func(key, filter []byte) bool
 }
 
-func (m *mockFilterPolicy) Name() string { return "leveldb.test" }
+func (m *mockFilterPolicy) Name() string { return PkgName + ".test" }
 func (m *mockFilterPolicy) CreateFilter(keys [][]byte) []byte {
 	return m.createFilter(keys)
 }

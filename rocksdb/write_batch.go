@@ -1,6 +1,6 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 import (
 	"errors"
@@ -10,6 +10,18 @@ import (
 // WriteBatch is a batching of Puts, Merges and Deletes.
 type WriteBatch struct {
 	c *C.rocksdb_writebatch_t
+}
+
+type Batch WriteBatch
+func (wb *Batch) Put(key, value []byte) {
+	cKey := byteToChar(key)
+	cValue := byteToChar(value)
+	C.rocksdb_writebatch_put(wb.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)))
+}
+
+func (wb *Batch) Delete(key []byte) {
+	cKey := byteToChar(key)
+	C.rocksdb_writebatch_delete(wb.c, cKey, C.size_t(len(key)))
 }
 
 // NewWriteBatch create a WriteBatch object.
@@ -152,10 +164,8 @@ func (iter *WriteBatchIterator) Next() bool {
 	iter.record.CF = 0
 	iter.record.Key = nil
 	iter.record.Value = nil
-
 	// parse the record type
 	iter.record.Type = iter.decodeRecType()
-
 	switch iter.record.Type {
 	case
 		WriteBatchDeletionRecord,
@@ -203,9 +213,7 @@ func (iter *WriteBatchIterator) Next() bool {
 	default:
 		iter.err = errors.New("unsupported wal record type")
 	}
-
 	return iter.err == nil
-
 }
 
 // Record returns the current record.

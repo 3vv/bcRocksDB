@@ -1,6 +1,6 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // FlushOptions represent all of the available options when manual flushing the

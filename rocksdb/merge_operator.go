@@ -1,6 +1,6 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // A MergeOperator specifies the SEMANTICS of a merge, which only
@@ -76,8 +76,8 @@ func registerMergeOperator(merger MergeOperator) int {
 	return mergeOperators.Append(mergeOperatorWrapper{C.CString(merger.Name()), merger})
 }
 
-//export leveldb_mergeoperator_full_merge
-func leveldb_mergeoperator_full_merge(idx int, cKey *C.char, cKeyLen C.size_t, cExistingValue *C.char, cExistingValueLen C.size_t, cOperands **C.char, cOperandsLen *C.size_t, cNumOperands C.int, cSuccess *C.uchar, cNewValueLen *C.size_t) *C.char {
+//export itf_mergeoperator_full_merge
+func itf_mergeoperator_full_merge(idx int, cKey *C.char, cKeyLen C.size_t, cExistingValue *C.char, cExistingValueLen C.size_t, cOperands **C.char, cOperandsLen *C.size_t, cNumOperands C.int, cSuccess *C.uchar, cNewValueLen *C.size_t) *C.char {
 	key := charToByte(cKey, cKeyLen)
 	rawOperands := charSlice(cOperands, cNumOperands)
 	operandsLen := sizeSlice(cOperandsLen, cNumOperands)
@@ -96,8 +96,8 @@ func leveldb_mergeoperator_full_merge(idx int, cKey *C.char, cKeyLen C.size_t, c
 	return cByteSlice(newValue)
 }
 
-//export leveldb_mergeoperator_partial_merge_multi
-func leveldb_mergeoperator_partial_merge_multi(idx int, cKey *C.char, cKeyLen C.size_t, cOperands **C.char, cOperandsLen *C.size_t, cNumOperands C.int, cSuccess *C.uchar, cNewValueLen *C.size_t) *C.char {
+//export itf_mergeoperator_partial_merge_multi
+func itf_mergeoperator_partial_merge_multi(idx int, cKey *C.char, cKeyLen C.size_t, cOperands **C.char, cOperandsLen *C.size_t, cNumOperands C.int, cSuccess *C.uchar, cNewValueLen *C.size_t) *C.char {
 	key := charToByte(cKey, cKeyLen)
 	rawOperands := charSlice(cOperands, cNumOperands)
 	operandsLen := sizeSlice(cOperandsLen, cNumOperands)
@@ -126,7 +126,7 @@ func leveldb_mergeoperator_partial_merge_multi(idx int, cKey *C.char, cKeyLen C.
 	return cByteSlice(newValue)
 }
 
-//export leveldb_mergeoperator_name
-func leveldb_mergeoperator_name(idx int) *C.char {
+//export itf_mergeoperator_name
+func itf_mergeoperator_name(idx int) *C.char {
 	return mergeOperators.Get(idx).(mergeOperatorWrapper).name
 }

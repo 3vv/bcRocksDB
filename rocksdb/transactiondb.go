@@ -1,11 +1,12 @@
 package rocksdb
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
+//#include <stdlib.h>
 import "C"
 import (
 	"errors"
 	"unsafe"
+	. "./util"
 )
 
 // TransactionDB is a reusable handle to a RocksDB transactional database on disk, created by OpenTransactionDb.
@@ -67,9 +68,7 @@ func (db *TransactionDB) TransactionBegin(
 			oldTransaction.c,
 		))
 	}
-
-	return NewNativeTransaction(C.rocksdb_transaction_begin(
-		db.c, opts.c, transactionOpts.c, nil))
+	return NewNativeTransaction(C.rocksdb_transaction_begin(db.c, opts.c, transactionOpts.c, nil))
 }
 
 // Get returns the data associated with the key from the database.
@@ -86,7 +85,7 @@ func (db *TransactionDB) Get(opts *ReadOptions, key []byte) (*Slice, error) {
 		defer C.free(unsafe.Pointer(cErr))
 		return nil, errors.New(C.GoString(cErr))
 	}
-	return NewSlice(cValue, cValLen), nil
+	return /*NewSlice(cValue, cValLen)*/StringToSlice(C.GoStringN(cValue, (C.int)(cValLen))), nil
 }
 
 // Put writes data associated with a key to the database.
@@ -132,7 +131,6 @@ func (db *TransactionDB) NewCheckpoint() (*Checkpoint, error) {
 		defer C.free(unsafe.Pointer(cErr))
 		return nil, errors.New(C.GoString(cErr))
 	}
-
 	return NewNativeCheckpoint(cCheckpoint), nil
 }
 

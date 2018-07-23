@@ -1,12 +1,15 @@
-package rocksdb
+package iterator
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
+//#include <stdlib.h>
+//#cgo CFLAGS: -I..
+//#cgo LDFLAGS: -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy
 import "C"
 import (
 	"bytes"
 	"errors"
 	"unsafe"
+	. "../util"
 )
 
 // Iterator provides a way to seek to specific keys and iterate through
@@ -49,34 +52,35 @@ func (iter *Iterator) ValidForPrefix(prefix []byte) bool {
 	}
 
 	key := iter.Key()
-	result := bytes.HasPrefix(key.Data(), prefix)
-	key.Free()
+	result := bytes.HasPrefix(key/*.Data()*/, prefix)
+	//key.Free()
 	return result
 }
 
 // Key returns the key the iterator currently holds.
-func (iter *Iterator) Key() *Slice {
+func (iter *Iterator) Key() /**Slice*/[]byte {
 	var cLen C.size_t
 	cKey := C.rocksdb_iter_key(iter.c, &cLen)
 	if cKey == nil {
 		return nil
 	}
-	return &Slice{cKey, cLen, true}
+	return /*&Slice{cKey, cLen, true}*/StringToSlice(C.GoStringN(cKey, (C.int)(cLen))).Data()
 }
 
 // Value returns the value in the database the iterator currently holds.
-func (iter *Iterator) Value() *Slice {
+func (iter *Iterator) Value() /**Slice*/[]byte {
 	var cLen C.size_t
 	cVal := C.rocksdb_iter_value(iter.c, &cLen)
 	if cVal == nil {
 		return nil
-	}
-	return &Slice{cVal, cLen, true}
+  }
+	return /*&Slice{cVal, cLen, true}*/StringToSlice(C.GoStringN(cVal, (C.int)(cLen))).Data()
 }
 
 // Next moves the iterator to the next sequential key in the database.
-func (iter *Iterator) Next() {
-	C.rocksdb_iter_next(iter.c)
+func (iter *Iterator) Next() bool {
+  C.rocksdb_iter_next(iter.c)
+  return false
 }
 
 // Prev moves the iterator to the previous sequential key in the database.
@@ -96,15 +100,15 @@ func (iter *Iterator) SeekToLast() {
 
 // Seek moves the iterator to the position greater than or equal to the key.
 func (iter *Iterator) Seek(key []byte) {
-	cKey := byteToChar(key)
-	C.rocksdb_iter_seek(iter.c, cKey, C.size_t(len(key)))
+	cKey := /*byteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+	C.rocksdb_iter_seek(iter.c, (*C.char)(cKey), C.size_t(len(key)))
 }
 
 // SeekForPrev moves the iterator to the last key that less than or equal
 // to the target key, in contrast with Seek.
 func (iter *Iterator) SeekForPrev(key []byte) {
-	cKey := byteToChar(key)
-	C.rocksdb_iter_seek_for_prev(iter.c, cKey, C.size_t(len(key)))
+	cKey := /*byteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+	C.rocksdb_iter_seek_for_prev(iter.c, (*C.char)(cKey), C.size_t(len(key)))
 }
 
 // Err returns nil if no errors happened during iteration, or the actual
@@ -119,8 +123,16 @@ func (iter *Iterator) Err() error {
 	return nil
 }
 
+func (iter *Iterator) Error() error {
+  return iter.Err()
+}
+
 // Close closes the iterator.
 func (iter *Iterator) Close() {
 	C.rocksdb_iter_destroy(iter.c)
 	iter.c = nil
+}
+
+func (iter *Iterator) Release() {
+	iter.Close()
 }

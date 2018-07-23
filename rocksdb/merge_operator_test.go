@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/facebookgo/ensure"
+	. "./constants"
 )
 
 func TestMergeOperator(t *testing.T) {
@@ -45,7 +46,7 @@ type mockMergeOperator struct {
 	partialMerge func(key, leftOperand, rightOperand []byte) ([]byte, bool)
 }
 
-func (m *mockMergeOperator) Name() string { return "leveldb.test" }
+func (m *mockMergeOperator) Name() string { return PkgName+".test" }
 func (m *mockMergeOperator) FullMerge(key, existingValue []byte, operands [][]byte) ([]byte, bool) {
 	return m.fullMerge(key, existingValue, operands)
 }

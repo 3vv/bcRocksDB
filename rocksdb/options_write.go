@@ -1,6 +1,6 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // WriteOptions represent all of the available options when writing to a

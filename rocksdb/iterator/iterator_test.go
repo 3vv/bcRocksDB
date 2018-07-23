@@ -1,4 +1,4 @@
-package rocksdb
+package iterator
 
 import (
 	"testing"

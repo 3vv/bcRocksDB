@@ -8,7 +8,7 @@ import (
 )
 
 func TestColumnFamilyOpen(t *testing.T) {
-	dir, err := ioutil.TempDir("", "leveldb-TestColumnFamilyOpen")
+	dir, err := ioutil.TempDir("", PkgName + "-TestColumnFamilyOpen")
 	ensure.Nil(t, err)
 
 	givenNames := []string{"default", "guide"}
@@ -28,7 +28,7 @@ func TestColumnFamilyOpen(t *testing.T) {
 }
 
 func TestColumnFamilyCreateDrop(t *testing.T) {
-	dir, err := ioutil.TempDir("", "leveldb-TestColumnFamilyCreate")
+	dir, err := ioutil.TempDir("", PkgName + "-TestColumnFamilyCreate")
 	ensure.Nil(t, err)
 
 	opts := NewDefaultOptions()
@@ -53,7 +53,7 @@ func TestColumnFamilyCreateDrop(t *testing.T) {
 }
 
 func TestColumnFamilyBatchPutGet(t *testing.T) {
-	dir, err := ioutil.TempDir("", "leveldb-TestColumnFamilyPutGet")
+	dir, err := ioutil.TempDir("", PkgName + "-TestColumnFamilyPutGet")
 	ensure.Nil(t, err)
 
 	givenNames := []string{"default", "guide"}
@@ -104,7 +104,7 @@ func TestColumnFamilyBatchPutGet(t *testing.T) {
 }
 
 func TestColumnFamilyPutGetDelete(t *testing.T) {
-	dir, err := ioutil.TempDir("", "leveldb-TestColumnFamilyPutGet")
+	dir, err := ioutil.TempDir("", PkgName + "-TestColumnFamilyPutGet")
 	ensure.Nil(t, err)
 
 	givenNames := []string{"default", "guide"}

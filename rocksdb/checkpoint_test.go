@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	. "./constants"
 )
 
 func TestCheckpoint(t *testing.T) {
 
 	suffix := "checkpoint"
-	dir, err := ioutil.TempDir("", "leveldb-"+suffix)
+	dir, err := ioutil.TempDir("", PkgName+"-"+suffix)
 	ensure.Nil(t, err)
 	err = os.RemoveAll(dir)
 	ensure.Nil(t, err)

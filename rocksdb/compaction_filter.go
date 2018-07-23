@@ -1,7 +1,10 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
+import (
+	"unsafe"
+)
 
 // A CompactionFilter can be used to filter keys during compaction time.
 type CompactionFilter interface {
@@ -51,23 +54,22 @@ func registerCompactionFilter(filter CompactionFilter) int {
 	return compactionFilters.Append(compactionFilterWrapper{C.CString(filter.Name()), filter})
 }
 
-//export leveldb_compactionfilter_filter
-func leveldb_compactionfilter_filter(idx int, cLevel C.int, cKey *C.char, cKeyLen C.size_t, cVal *C.char, cValLen C.size_t, cNewVal **C.char, cNewValLen *C.size_t, cValChanged *C.uchar) C.int {
-	key := charToByte(cKey, cKeyLen)
-	val := charToByte(cVal, cValLen)
-
+//export itf_compactionfilter_filter
+func itf_compactionfilter_filter(idx int, cLevel C.int, cKey *C.char, cKeyLen C.size_t, cVal *C.char, cValLen C.size_t, cNewVal **C.char, cNewValLen *C.size_t, cValChanged *C.uchar) C.int {
+	key := /*CharToByte(cKey, cKeyLen)*/C.GoBytes(unsafe.Pointer(cKey), (C.int)(cKeyLen))
+	val := /*CharToByte(cVal, cValLen)*/C.GoBytes(unsafe.Pointer(cVal), (C.int)(cValLen))
 	remove, newVal := compactionFilters.Get(idx).(compactionFilterWrapper).filter.Filter(int(cLevel), key, val)
 	if remove {
 		return C.int(1)
 	} else if newVal != nil {
-		*cNewVal = byteToChar(newVal)
+		*cNewVal = /*ByteToChar(newVal)*/(*C.char)(unsafe.Pointer(&newVal[0]))
 		*cNewValLen = C.size_t(len(newVal))
 		*cValChanged = C.uchar(1)
 	}
 	return C.int(0)
 }
 
-//export leveldb_compactionfilter_name
-func leveldb_compactionfilter_name(idx int) *C.char {
+//export itf_compactionfilter_name
+func itf_compactionfilter_name(idx int) *C.char {
 	return compactionFilters.Get(idx).(compactionFilterWrapper).name
 }

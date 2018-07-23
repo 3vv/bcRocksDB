@@ -1,7 +1,6 @@
 package rocksdb
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // RateLimiter, is used to control write rate of flush and

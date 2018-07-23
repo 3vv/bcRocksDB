@@ -1,19 +1,16 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // A SliceTransform can be used as a prefix extractor.
 type SliceTransform interface {
 	// Transform a src in domain to a dst in the range.
 	Transform(src []byte) []byte
-
 	// Determine whether this is a valid src upon the function applies.
 	InDomain(src []byte) bool
-
 	// Determine whether dst=Transform(src) for some src.
 	InRange(src []byte) bool
-
 	// Return the name of this transformation.
 	Name() string
 }
@@ -49,29 +46,29 @@ func registerSliceTransform(st SliceTransform) int {
 	return sliceTransforms.Append(sliceTransformWrapper{C.CString(st.Name()), st})
 }
 
-//export leveldb_slicetransform_transform
-func leveldb_slicetransform_transform(idx int, cKey *C.char, cKeyLen C.size_t, cDstLen *C.size_t) *C.char {
+//export itf_slicetransform_transform
+func itf_slicetransform_transform(idx int, cKey *C.char, cKeyLen C.size_t, cDstLen *C.size_t) *C.char {
 	key := charToByte(cKey, cKeyLen)
 	dst := sliceTransforms.Get(idx).(sliceTransformWrapper).sliceTransform.Transform(key)
 	*cDstLen = C.size_t(len(dst))
 	return cByteSlice(dst)
 }
 
-//export leveldb_slicetransform_in_domain
-func leveldb_slicetransform_in_domain(idx int, cKey *C.char, cKeyLen C.size_t) C.uchar {
+//export itf_slicetransform_in_domain
+func itf_slicetransform_in_domain(idx int, cKey *C.char, cKeyLen C.size_t) C.uchar {
 	key := charToByte(cKey, cKeyLen)
 	inDomain := sliceTransforms.Get(idx).(sliceTransformWrapper).sliceTransform.InDomain(key)
 	return boolToChar(inDomain)
 }
 
-//export leveldb_slicetransform_in_range
-func leveldb_slicetransform_in_range(idx int, cKey *C.char, cKeyLen C.size_t) C.uchar {
+//export itf_slicetransform_in_range
+func itf_slicetransform_in_range(idx int, cKey *C.char, cKeyLen C.size_t) C.uchar {
 	key := charToByte(cKey, cKeyLen)
 	inRange := sliceTransforms.Get(idx).(sliceTransformWrapper).sliceTransform.InRange(key)
 	return boolToChar(inRange)
 }
 
-//export leveldb_slicetransform_name
-func leveldb_slicetransform_name(idx int) *C.char {
+//export itf_slicetransform_name
+func itf_slicetransform_name(idx int) *C.char {
 	return sliceTransforms.Get(idx).(sliceTransformWrapper).name
 }

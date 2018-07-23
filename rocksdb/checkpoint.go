@@ -1,7 +1,7 @@
 package rocksdb
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
+//#include <stdlib.h>
 import "C"
 
 import (

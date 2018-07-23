@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/facebookgo/ensure"
+	"./constans"
 )
 
 func TestCompactionFilter(t *testing.T) {
@@ -55,7 +56,7 @@ type mockCompactionFilter struct {
 	filter func(level int, key, val []byte) (remove bool, newVal []byte)
 }
 
-func (m *mockCompactionFilter) Name() string { return "leveldb.test" }
+func (m *mockCompactionFilter) Name() string { return PkgName+".test" }
 func (m *mockCompactionFilter) Filter(level int, key, val []byte) (bool, []byte) {
 	return m.filter(level, key, val)
 }

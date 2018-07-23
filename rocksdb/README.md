@@ -1,12 +1,14 @@
 # bcRocksDB, a Go-wrapper for RocksDB
 
-[![Build Status](https://travis-ci.org/tecbot/leveldb.png)](https://travis-ci.org/tecbot/leveldb) [![GoDoc](https://godoc.org/github.com/tecbot/leveldb?status.png)](http://godoc.org/github.com/tecbot/leveldb)
+[![Linux/Mac Build Status](https://travis-ci.org/facebook/rocksdb.svg?branch=master)](https://travis-ci.org/facebook/rocksdb)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/fbgfu0so3afcno78/branch/master?svg=true)](https://ci.appveyor.com/project/Facebook/rocksdb/branch/master)
+[![PPC64le Build Status](http://140.211.168.68:8080/buildStatus/icon?job=Rocksdb)](http://140.211.168.68:8080/job/Rocksdb)
 
 ## Install
 
 You'll need to build [RocksDB](https://github.com/facebook/rocksdb) v5.5+ on your machine.
 
-After that, you can install leveldb using the following command:
+After that, you can install bcRocksDB using the following command:
 
     ROCKSDB="/path/to/rocksdb"
     CGO_CFLAGS="-I$ROCKSDB/include"

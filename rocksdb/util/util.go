@@ -1,9 +1,16 @@
-package rocksdb
+package util
 
 import "C"
 import (
+	"errors"
 	"reflect"
 	"unsafe"
+	. "../constants"
+)
+
+var (
+	ErrReleased    = errors.New(PkgName + ": resource already relesed")
+	ErrHasReleaser = errors.New(PkgName + ": releaser already defined")
 )
 
 // btoi converts a bool value to int.
@@ -15,7 +22,7 @@ func btoi(b bool) int {
 }
 
 // boolToChar converts a bool value to C.uchar.
-func boolToChar(b bool) C.uchar {
+func BoolToChar(b bool) C.uchar {
 	if b {
 		return 1
 	}
@@ -31,7 +38,7 @@ func charToByte(data *C.char, len C.size_t) []byte {
 }
 
 // byteToChar returns *C.char from byte slice.
-func byteToChar(b []byte) *C.char {
+func ByteToChar(b []byte) *C.char {
 	var c *C.char
 	if len(b) > 0 {
 		c = (*C.char)(unsafe.Pointer(&b[0]))

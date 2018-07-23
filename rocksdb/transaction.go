@@ -1,12 +1,14 @@
 package rocksdb
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
+//#include <stdlib.h>
 import "C"
 
 import (
 	"errors"
 	"unsafe"
+	. "./iterator"
+	. "./util"
 )
 
 // Transaction is used with TransactionDB for transaction support.
@@ -60,7 +62,7 @@ func (transaction *Transaction) Get(opts *ReadOptions, key []byte) (*Slice, erro
 		defer C.free(unsafe.Pointer(cErr))
 		return nil, errors.New(C.GoString(cErr))
 	}
-	return NewSlice(cValue, cValLen), nil
+	return /*NewSlice(cValue, cValLen)*/StringToSlice(C.GoStringN(cValue, (C.int)(cValLen))), nil
 }
 
 // Put writes data associated with a key to the transaction.

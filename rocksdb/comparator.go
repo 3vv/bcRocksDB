@@ -1,7 +1,10 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
+import (
+	"unsafe"
+)
 
 // A Comparator object provides a total order across slices that are
 // used as keys in an sstable or a database.
@@ -40,14 +43,14 @@ func registerComperator(cmp Comparator) int {
 	return comperators.Append(comperatorWrapper{C.CString(cmp.Name()), cmp})
 }
 
-//export leveldb_comparator_compare
-func leveldb_comparator_compare(idx int, cKeyA *C.char, cKeyALen C.size_t, cKeyB *C.char, cKeyBLen C.size_t) C.int {
-	keyA := charToByte(cKeyA, cKeyALen)
-	keyB := charToByte(cKeyB, cKeyBLen)
+//export itf_comparator_compare
+func itf_comparator_compare(idx int, cKeyA *C.char, cKeyALen C.size_t, cKeyB *C.char, cKeyBLen C.size_t) C.int {
+	keyA := /*CharToByte(cKeyA, cKeyALen)*/C.GoBytes(unsafe.Pointer(cKeyA), (C.int)(cKeyALen))
+	keyB := /*CharToByte(cKeyB, cKeyBLen)*/C.GoBytes(unsafe.Pointer(cKeyB), (C.int)(cKeyBLen))
 	return C.int(comperators.Get(idx).(comperatorWrapper).comparator.Compare(keyA, keyB))
 }
 
-//export leveldb_comparator_name
-func leveldb_comparator_name(idx int) *C.char {
+//export itf_comparator_name
+func itf_comparator_name(idx int) *C.char {
 	return comperators.Get(idx).(comperatorWrapper).name
 }

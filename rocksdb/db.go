@@ -1,19 +1,15 @@
 package rocksdb
 
-// #include <stdlib.h>
-// #include "rocksdb/c.h"
+//#include "api.h"
+//#include <stdlib.h>
 import "C"
 import (
 	"errors"
 	"unsafe"
+	"./opt"
+	"./iterator"
+	. "./util"
 )
-
-// Range is a range of keys in the database. GetApproximateSizes calls with it
-// begin at the key Start and end right before the key Limit.
-type Range struct {
-	Start []byte
-	Limit []byte
-}
 
 // DB is a reusable handle to a RocksDB database on disk, created by Open.
 type DB struct {
@@ -39,6 +35,16 @@ func OpenDb(opts *Options, name string) (*DB, error) {
 		c:    db,
 		opts: opts,
 	}, nil
+}
+
+func OpenFile(p string, o *opt.Options) (db *DB, err error) {
+	opts := NewDefaultOptions()
+  rateLimiter := NewRateLimiter(int64(o.BlockCacheCapacity), int64(o.WriteBuffer), int32(o.Filter))
+  opts.SetTableCacheRemoveScanCountLimit(o.OpenFilesCacheCapacity)
+	opts.SetRateLimiter(rateLimiter)
+  opts.SetCreateIfMissing(true)
+  opts.SetSkipLogErrorOnRecovery(false)
+  return OpenDb(opts, p)
 }
 
 // OpenDbForReadOnly opens a database with the specified options for readonly usage.
@@ -215,18 +221,19 @@ func (db *DB) Name() string {
 }
 
 // Get returns the data associated with the key from the database.
-func (db *DB) Get(opts *ReadOptions, key []byte) (*Slice, error) {
+func (db *DB) Get(/*opts *ReadOptions, */key []byte, opts *ReadOptions) (/**Slice*/[]byte, error) {/*
 	var (
 		cErr    *C.char
 		cValLen C.size_t
-		cKey    = byteToChar(key)
+		cKey    = ByteToChar(key)
 	)
 	cValue := C.rocksdb_get(db.c, opts.c, cKey, C.size_t(len(key)), &cValLen, &cErr)
 	if cErr != nil {
 		defer C.free(unsafe.Pointer(cErr))
 		return nil, errors.New(C.GoString(cErr))
 	}
-	return NewSlice(cValue, cValLen), nil
+	return NewSlice(cValue, cValLen), nil*/
+	return db.GetBytes(opts, key)
 }
 
 // GetBytes is like Get but returns a copy of the data.
@@ -234,7 +241,7 @@ func (db *DB) GetBytes(opts *ReadOptions, key []byte) ([]byte, error) {
 	var (
 		cErr    *C.char
 		cValLen C.size_t
-		cKey    = byteToChar(key)
+		cKey    = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
 	)
 	cValue := C.rocksdb_get(db.c, opts.c, cKey, C.size_t(len(key)), &cValLen, &cErr)
 	if cErr != nil {
@@ -253,22 +260,22 @@ func (db *DB) GetCF(opts *ReadOptions, cf *ColumnFamilyHandle, key []byte) (*Sli
 	var (
 		cErr    *C.char
 		cValLen C.size_t
-		cKey    = byteToChar(key)
+		cKey    = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
 	)
 	cValue := C.rocksdb_get_cf(db.c, opts.c, cf.c, cKey, C.size_t(len(key)), &cValLen, &cErr)
 	if cErr != nil {
 		defer C.free(unsafe.Pointer(cErr))
 		return nil, errors.New(C.GoString(cErr))
 	}
-	return NewSlice(cValue, cValLen), nil
+	return /*NewSlice(cValue, cValLen), nil*/StringToSlice(C.GoStringN(cValue, (C.int)(cValLen))), nil
 }
 
 // Put writes data associated with a key to the database.
-func (db *DB) Put(opts *WriteOptions, key, value []byte) error {
+func (db *DB) Put(/*opts *WriteOptions, */key, value []byte, opts *WriteOptions) error {
 	var (
 		cErr   *C.char
-		cKey   = byteToChar(key)
-		cValue = byteToChar(value)
+		cKey   = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+		cValue = /*ByteToChar(value)*/(*C.char)(unsafe.Pointer(&value[0]))
 	)
 	C.rocksdb_put(db.c, opts.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)), &cErr)
 	if cErr != nil {
@@ -282,8 +289,8 @@ func (db *DB) Put(opts *WriteOptions, key, value []byte) error {
 func (db *DB) PutCF(opts *WriteOptions, cf *ColumnFamilyHandle, key, value []byte) error {
 	var (
 		cErr   *C.char
-		cKey   = byteToChar(key)
-		cValue = byteToChar(value)
+		cKey   = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+		cValue = /*ByteToChar(value)*/(*C.char)(unsafe.Pointer(&value[0]))
 	)
 	C.rocksdb_put_cf(db.c, opts.c, cf.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)), &cErr)
 	if cErr != nil {
@@ -294,10 +301,10 @@ func (db *DB) PutCF(opts *WriteOptions, cf *ColumnFamilyHandle, key, value []byt
 }
 
 // Delete removes the data associated with the key from the database.
-func (db *DB) Delete(opts *WriteOptions, key []byte) error {
+func (db *DB) Delete(/*opts *WriteOptions, */key []byte, opts *WriteOptions) error {
 	var (
 		cErr *C.char
-		cKey = byteToChar(key)
+		cKey = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
 	)
 	C.rocksdb_delete(db.c, opts.c, cKey, C.size_t(len(key)), &cErr)
 	if cErr != nil {
@@ -311,7 +318,7 @@ func (db *DB) Delete(opts *WriteOptions, key []byte) error {
 func (db *DB) DeleteCF(opts *WriteOptions, cf *ColumnFamilyHandle, key []byte) error {
 	var (
 		cErr *C.char
-		cKey = byteToChar(key)
+		cKey = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
 	)
 	C.rocksdb_delete_cf(db.c, opts.c, cf.c, cKey, C.size_t(len(key)), &cErr)
 	if cErr != nil {
@@ -325,8 +332,8 @@ func (db *DB) DeleteCF(opts *WriteOptions, cf *ColumnFamilyHandle, key []byte) e
 func (db *DB) Merge(opts *WriteOptions, key []byte, value []byte) error {
 	var (
 		cErr   *C.char
-		cKey   = byteToChar(key)
-		cValue = byteToChar(value)
+		cKey   = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+		cValue = /*ByteToChar(value)*/(*C.char)(unsafe.Pointer(&value[0]))
 	)
 	C.rocksdb_merge(db.c, opts.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)), &cErr)
 	if cErr != nil {
@@ -341,8 +348,8 @@ func (db *DB) Merge(opts *WriteOptions, key []byte, value []byte) error {
 func (db *DB) MergeCF(opts *WriteOptions, cf *ColumnFamilyHandle, key []byte, value []byte) error {
 	var (
 		cErr   *C.char
-		cKey   = byteToChar(key)
-		cValue = byteToChar(value)
+		cKey   = /*ByteToChar(key)*/(*C.char)(unsafe.Pointer(&key[0]))
+		cValue = /*ByteToChar(value)*/(*C.char)(unsafe.Pointer(&value[0]))
 	)
 	C.rocksdb_merge_cf(db.c, opts.c, cf.c, cKey, C.size_t(len(key)), cValue, C.size_t(len(value)), &cErr)
 	if cErr != nil {
@@ -353,7 +360,7 @@ func (db *DB) MergeCF(opts *WriteOptions, cf *ColumnFamilyHandle, key []byte, va
 }
 
 // Write writes a WriteBatch to the database
-func (db *DB) Write(opts *WriteOptions, batch *WriteBatch) error {
+func (db *DB) Write(/*opts *WriteOptions, batch *WriteBatch*/batch *Batch, opts *WriteOptions) error {
 	var cErr *C.char
 	C.rocksdb_write(db.c, opts.c, batch.c, &cErr)
 	if cErr != nil {
@@ -365,16 +372,16 @@ func (db *DB) Write(opts *WriteOptions, batch *WriteBatch) error {
 
 // NewIterator returns an Iterator over the the database that uses the
 // ReadOptions given.
-func (db *DB) NewIterator(opts *ReadOptions) *Iterator {
+func (db *DB) NewIterator(slice *Range, opts *ReadOptions) *iterator.Iterator {
 	cIter := C.rocksdb_create_iterator(db.c, opts.c)
-	return NewNativeIterator(unsafe.Pointer(cIter))
+	return iterator.NewNativeIterator(unsafe.Pointer(cIter))
 }
 
 // NewIteratorCF returns an Iterator over the the database and column family
 // that uses the ReadOptions given.
-func (db *DB) NewIteratorCF(opts *ReadOptions, cf *ColumnFamilyHandle) *Iterator {
+func (db *DB) NewIteratorCF(opts *ReadOptions, cf *ColumnFamilyHandle) *iterator.Iterator {
 	cIter := C.rocksdb_create_iterator_cf(db.c, opts.c, cf.c)
-	return NewNativeIterator(unsafe.Pointer(cIter))
+	return iterator.NewNativeIterator(unsafe.Pointer(cIter))
 }
 
 // NewSnapshot creates a new snapshot of the database.
@@ -390,12 +397,12 @@ func (db *DB) ReleaseSnapshot(snapshot *Snapshot) {
 }
 
 // GetProperty returns the value of a database property.
-func (db *DB) GetProperty(propName string) string {
+func (db *DB) GetProperty(propName string) (string, error) {
 	cprop := C.CString(propName)
 	defer C.free(unsafe.Pointer(cprop))
 	cValue := C.rocksdb_property_value(db.c, cprop)
 	defer C.free(unsafe.Pointer(cValue))
-	return C.GoString(cValue)
+	return C.GoString(cValue), nil
 }
 
 // GetPropertyCF returns the value of a database property.
@@ -449,9 +456,9 @@ func (db *DB) GetApproximateSizes(ranges []Range) []uint64 {
 	cStartLens := make([]C.size_t, len(ranges))
 	cLimitLens := make([]C.size_t, len(ranges))
 	for i, r := range ranges {
-		cStarts[i] = byteToChar(r.Start)
+		cStarts[i] = /*ByteToChar(r.Start)*/(*C.char)(unsafe.Pointer(&r.Start[0]))
 		cStartLens[i] = C.size_t(len(r.Start))
-		cLimits[i] = byteToChar(r.Limit)
+		cLimits[i] = /*ByteToChar(r.Limit)*/(*C.char)(unsafe.Pointer(&r.Limit[0]))
 		cLimitLens[i] = C.size_t(len(r.Limit))
 	}
 
@@ -483,9 +490,9 @@ func (db *DB) GetApproximateSizesCF(cf *ColumnFamilyHandle, ranges []Range) []ui
 	cStartLens := make([]C.size_t, len(ranges))
 	cLimitLens := make([]C.size_t, len(ranges))
 	for i, r := range ranges {
-		cStarts[i] = byteToChar(r.Start)
+		cStarts[i] = /*ByteToChar(r.Start)*/(*C.char)(unsafe.Pointer(&r.Start[0]))
 		cStartLens[i] = C.size_t(len(r.Start))
-		cLimits[i] = byteToChar(r.Limit)
+		cLimits[i] = /*ByteToChar(r.Limit)*/(*C.char)(unsafe.Pointer(&r.Limit[0]))
 		cLimitLens[i] = C.size_t(len(r.Limit))
 	}
 
@@ -538,17 +545,18 @@ func (db *DB) GetLiveFilesMetaData() []LiveFileMetadata {
 
 // CompactRange runs a manual compaction on the Range of keys given. This is
 // not likely to be needed for typical usage.
-func (db *DB) CompactRange(r Range) {
-	cStart := byteToChar(r.Start)
-	cLimit := byteToChar(r.Limit)
-	C.rocksdb_compact_range(db.c, cStart, C.size_t(len(r.Start)), cLimit, C.size_t(len(r.Limit)))
+func (db *DB) CompactRange(r Range) error {
+	cStart := /*ByteToChar(r.Start)*/(*C.char)(unsafe.Pointer(&r.Start[0]))
+	cLimit := /*ByteToChar(r.Limit)*/(*C.char)(unsafe.Pointer(&r.Limit[0]))
+  C.rocksdb_compact_range(db.c, cStart, C.size_t(len(r.Start)), cLimit, C.size_t(len(r.Limit)))
+  return nil
 }
 
 // CompactRangeCF runs a manual compaction on the Range of keys given on the
 // given column family. This is not likely to be needed for typical usage.
 func (db *DB) CompactRangeCF(cf *ColumnFamilyHandle, r Range) {
-	cStart := byteToChar(r.Start)
-	cLimit := byteToChar(r.Limit)
+	cStart := /*ByteToChar(r.Start)*/(*C.char)(unsafe.Pointer(&r.Start[0]))
+	cLimit := /*ByteToChar(r.Limit)*/(*C.char)(unsafe.Pointer(&r.Limit[0]))
 	C.rocksdb_compact_range_cf(db.c, cf.c, cStart, C.size_t(len(r.Start)), cLimit, C.size_t(len(r.Limit)))
 }
 
@@ -670,8 +678,9 @@ func (db *DB) NewCheckpoint() (*Checkpoint, error) {
 }
 
 // Close closes the database.
-func (db *DB) Close() {
-	C.rocksdb_close(db.c)
+func (db *DB) Close() error {
+  C.rocksdb_close(db.c)
+  return nil
 }
 
 // DestroyDb removes a database entirely, removing everything from the

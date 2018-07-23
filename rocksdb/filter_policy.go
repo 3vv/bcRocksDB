@@ -1,6 +1,6 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
+//#include "api.h"
 import "C"
 
 // FilterPolicy is a factory type that allows the RocksDB database to create a
@@ -61,8 +61,8 @@ func registerFilterPolicy(fp FilterPolicy) int {
 	return filterPolicies.Append(filterPolicyWrapper{C.CString(fp.Name()), fp})
 }
 
-//export leveldb_filterpolicy_create_filter
-func leveldb_filterpolicy_create_filter(idx int, cKeys **C.char, cKeysLen *C.size_t, cNumKeys C.int, cDstLen *C.size_t) *C.char {
+//export itf_filterpolicy_create_filter
+func itf_filterpolicy_create_filter(idx int, cKeys **C.char, cKeysLen *C.size_t, cNumKeys C.int, cDstLen *C.size_t) *C.char {
 	rawKeys := charSlice(cKeys, cNumKeys)
 	keysLen := sizeSlice(cKeysLen, cNumKeys)
 	keys := make([][]byte, int(cNumKeys))
@@ -75,14 +75,14 @@ func leveldb_filterpolicy_create_filter(idx int, cKeys **C.char, cKeysLen *C.siz
 	return cByteSlice(dst)
 }
 
-//export leveldb_filterpolicy_key_may_match
-func leveldb_filterpolicy_key_may_match(idx int, cKey *C.char, cKeyLen C.size_t, cFilter *C.char, cFilterLen C.size_t) C.uchar {
+//export itf_filterpolicy_key_may_match
+func itf_filterpolicy_key_may_match(idx int, cKey *C.char, cKeyLen C.size_t, cFilter *C.char, cFilterLen C.size_t) C.uchar {
 	key := charToByte(cKey, cKeyLen)
 	filter := charToByte(cFilter, cFilterLen)
 	return boolToChar(filterPolicies.Get(idx).(filterPolicyWrapper).filterPolicy.KeyMayMatch(key, filter))
 }
 
-//export leveldb_filterpolicy_name
-func leveldb_filterpolicy_name(idx int) *C.char {
+//export itf_filterpolicy_name
+func itf_filterpolicy_name(idx int) *C.char {
 	return filterPolicies.Get(idx).(filterPolicyWrapper).name
 }

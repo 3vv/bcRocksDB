@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/facebookgo/ensure"
+	. "./constants"
 )
 
 func TestComparator(t *testing.T) {
@@ -41,7 +42,7 @@ func TestComparator(t *testing.T) {
 
 type bytesReverseComparator struct{}
 
-func (cmp *bytesReverseComparator) Name() string { return "leveldb.bytes-reverse" }
+func (cmp *bytesReverseComparator) Name() string { return PkgName+".bytes-reverse" }
 func (cmp *bytesReverseComparator) Compare(a, b []byte) int {
 	return bytes.Compare(a, b) * -1
 }

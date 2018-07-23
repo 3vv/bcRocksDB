@@ -1,7 +1,7 @@
 package rocksdb
 
-// #include "rocksdb/c.h"
-// #include "rocksdb.h"
+//#include "api.h"
+//#include "stdlib.h"
 import "C"
 import "unsafe"
 
@@ -83,6 +83,18 @@ func NewNativeOptions(c *C.rocksdb_options_t) *Options {
 // -------------------
 // Parameters that affect behavior
 
+// SetComparator sets the comparator which define the order of keys in the table.
+// Default: a comparator that uses lexicographic byte-wise ordering
+func (opts *Options) SetComparator(value Comparator) {
+	if nc, ok := value.(nativeComparator); ok {
+		opts.ccmp = nc.c
+	} else {
+		idx := registerComperator(value)
+		opts.ccmp = C.api_comparator_create(C.uintptr_t(idx))
+	}
+	C.rocksdb_options_set_comparator(opts.c, opts.ccmp)
+}
+
 // SetCompactionFilter sets the specified compaction filter
 // which will be applied on compactions.
 // Default: nil
@@ -91,21 +103,9 @@ func (opts *Options) SetCompactionFilter(value CompactionFilter) {
 		opts.ccf = nc.c
 	} else {
 		idx := registerCompactionFilter(value)
-		opts.ccf = C.leveldb_compactionfilter_create(C.uintptr_t(idx))
+		opts.ccf = C.api_compactionfilter_create(C.uintptr_t(idx))
 	}
 	C.rocksdb_options_set_compaction_filter(opts.c, opts.ccf)
-}
-
-// SetComparator sets the comparator which define the order of keys in the table.
-// Default: a comparator that uses lexicographic byte-wise ordering
-func (opts *Options) SetComparator(value Comparator) {
-	if nc, ok := value.(nativeComparator); ok {
-		opts.ccmp = nc.c
-	} else {
-		idx := registerComperator(value)
-		opts.ccmp = C.leveldb_comparator_create(C.uintptr_t(idx))
-	}
-	C.rocksdb_options_set_comparator(opts.c, opts.ccmp)
 }
 
 // SetMergeOperator sets the merge operator which will be called
@@ -116,7 +116,7 @@ func (opts *Options) SetMergeOperator(value MergeOperator) {
 		opts.cmo = nmo.c
 	} else {
 		idx := registerMergeOperator(value)
-		opts.cmo = C.leveldb_mergeoperator_create(C.uintptr_t(idx))
+		opts.cmo = C.api_mergeoperator_create(C.uintptr_t(idx))
 	}
 	C.rocksdb_options_set_merge_operator(opts.c, opts.cmo)
 }
@@ -409,7 +409,7 @@ func (opts *Options) SetPrefixExtractor(value SliceTransform) {
 		opts.cst = nst.c
 	} else {
 		idx := registerSliceTransform(value)
-		opts.cst = C.leveldb_slicetransform_create(C.uintptr_t(idx))
+		opts.cst = C.api_slicetransform_create(C.uintptr_t(idx))
 	}
 	C.rocksdb_options_set_prefix_extractor(opts.c, opts.cst)
 }
